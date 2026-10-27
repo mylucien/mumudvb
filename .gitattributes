@@ -1,0 +1,2 @@
+# OpenWrt 源码树在 Linux 上编译，强制 LF，避免 shell 脚本 / patch 带 CRLF 后失效
+* text=auto eol=lf

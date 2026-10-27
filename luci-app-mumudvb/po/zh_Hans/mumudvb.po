@@ -1,0 +1,338 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-mumudvb 1.0.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_Hans\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "running"
+msgstr "运行中"
+
+msgid "stopped"
+msgstr "已停止"
+
+msgid "Service state"
+msgstr "服务状态"
+
+msgid "No log entries yet."
+msgstr "暂无日志"
+
+msgid "MuMuDVB status"
+msgstr "MuMuDVB 状态"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "MuMuDVB"
+msgstr "MuMuDVB"
+
+msgid "Streams a DVB/ATSC transponder to the LAN as multicast, HTTP unicast TS or HLS."
+msgstr "把 DVB/ATSC 转发器的节目以组播、HTTP 单播 TS 或 HLS 方式输出到局域网。"
+
+msgid "The real configuration file is generated from this page on every service start."
+msgstr "真正的配置文件在每次启动服务时根据本页内容生成。"
+
+msgid "General"
+msgstr "全局"
+
+msgid "Enable MuMuDVB"
+msgstr "启用 MuMuDVB"
+
+msgid "Master switch. When disabled no instance is started at all."
+msgstr "总开关。关闭后不会启动任何实例。"
+
+msgid "Use a custom configuration file"
+msgstr "使用自定义配置文件"
+
+msgid "Ignore all tuner sections below and start a single instance with the given file."
+msgstr "忽略下面所有调谐器，直接用指定文件启动单个实例。"
+
+msgid "The file can be edited on the configuration page."
+msgstr "该文件可在“配置文件”页面编辑。"
+
+msgid "Configuration file path"
+msgstr "配置文件路径"
+
+msgid "Service"
+msgstr "服务"
+
+msgid "Show status and log"
+msgstr "查看状态与日志"
+
+msgid "Control"
+msgstr "控制"
+
+msgid "Restart now"
+msgstr "立即重启"
+
+msgid "Restarting MuMuDVB…"
+msgstr "正在重启 MuMuDVB…"
+
+msgid "Tuners"
+msgstr "调谐器"
+
+msgid "One entry per DVB frontend. Each entry starts one mumudvb process."
+msgstr "每个 DVB 前端一条记录，每条记录启动一个 mumudvb 进程。"
+
+msgid "Click Edit to change the detailed parameters."
+msgstr "点击“编辑”修改详细参数。"
+
+msgid "Add tuner"
+msgstr "添加调谐器"
+
+msgid "Tuner settings"
+msgstr "调谐器设置"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "Enabled"
+msgstr "启用"
+
+msgid "Delivery system"
+msgstr "传输标准"
+
+msgid "DVB-T (terrestrial)"
+msgstr "DVB-T（地面）"
+
+msgid "DVB-T2 (terrestrial)"
+msgstr "DVB-T2（地面）"
+
+msgid "DVB-C (cable)"
+msgstr "DVB-C（有线）"
+
+msgid "DVB-S (satellite)"
+msgstr "DVB-S（卫星）"
+
+msgid "DVB-S2 (satellite)"
+msgstr "DVB-S2（卫星）"
+
+msgid "ATSC (North America)"
+msgstr "ATSC（北美）"
+
+msgid "Frequency"
+msgstr "频率"
+
+msgid "Terrestrial/cable: MHz (474) or Hz (474000000). Satellite: MHz (11987)."
+msgstr "地面/有线：MHz（474）或 Hz（474000000）；卫星：MHz（11987）。"
+
+msgid "Adapter index"
+msgstr "适配器序号"
+
+msgid "Corresponds to /dev/dvb/adapterN."
+msgstr "对应 /dev/dvb/adapterN。"
+
+msgid "Frontend index"
+msgstr "前端序号"
+
+msgid "Only needed for cards with more than one frontend."
+msgstr "仅多前端设备需要设置。"
+
+msgid "Autoconfiguration"
+msgstr "自动配置"
+
+msgid "\"full\" discovers every service of the transponder and follows PID changes."
+msgstr "full 会自动发现转发器内所有节目，并跟随 PID 变化。"
+
+msgid "full (recommended)"
+msgstr "full（推荐）"
+
+msgid "none (manual channels)"
+msgstr "none（手动指定频道）"
+
+msgid "Multicast address template"
+msgstr "组播地址模板"
+
+msgid "e.g. 239.100.%card.%number — %number is the channel number, %card the adapter."
+msgstr "例如 239.100.%card.%number，%number 为频道序号，%card 为适配器序号。"
+
+msgid "Channel name template"
+msgstr "频道名模板"
+
+msgid "e.g. %number-%name"
+msgstr "例如 %number-%name"
+
+msgid "Ignore service IDs"
+msgstr "忽略的 service ID"
+
+msgid "Space separated list of SIDs to skip."
+msgstr "要跳过的 SID 列表，用空格分隔。"
+
+msgid "Bandwidth"
+msgstr "带宽"
+
+msgid "Transmission mode"
+msgstr "传输模式"
+
+msgid "auto"
+msgstr "自动"
+
+msgid "Guard interval"
+msgstr "保护间隔"
+
+msgid "Symbol rate"
+msgstr "符号率"
+
+msgid "Cable and satellite only, in kSym/s (e.g. 6875 or 27500)."
+msgstr "仅有线/卫星，单位 kSym/s（如 6875 或 27500）。"
+
+msgid "Modulation"
+msgstr "调制方式"
+
+msgid "Polarisation"
+msgstr "极化方式"
+
+msgid "horizontal"
+msgstr "水平"
+
+msgid "vertical"
+msgstr "垂直"
+
+msgid "left circular"
+msgstr "左旋"
+
+msgid "right circular"
+msgstr "右旋"
+
+msgid "DiSEqC satellite number"
+msgstr "DiSEqC 卫星号"
+
+msgid "0 = no DiSEqC, 1..4 = Position/Option A..B"
+msgstr "0 = 不用 DiSEqC，1..4 = 位置/选项 A..B"
+
+msgid "LNB type"
+msgstr "高频头类型"
+
+msgid "universal (9750/10600)"
+msgstr "通用（9750/10600）"
+
+msgid "standard (single LO)"
+msgstr "单本振"
+
+msgid "LNB low LO"
+msgstr "低段本振"
+
+msgid "MHz, universal LNB only, default 9750."
+msgstr "单位 MHz，仅通用高频头，默认 9750。"
+
+msgid "LNB high LO"
+msgstr "高段本振"
+
+msgid "MHz, universal LNB only, default 10600."
+msgstr "单位 MHz，仅通用高频头，默认 10600。"
+
+msgid "Switch type"
+msgstr "切换开关类型"
+
+msgid "Committed"
+msgstr "Committed"
+
+msgid "Uncommitted"
+msgstr "Uncommitted"
+
+msgid "Both"
+msgstr "两者"
+
+msgid "Unicable"
+msgstr "Unicable"
+
+msgid "Switch input"
+msgstr "开关输入口"
+
+msgid "0..31, overrides the DiSEqC satellite number."
+msgstr "0..31，会覆盖 DiSEqC 卫星号。"
+
+msgid "HTTP unicast"
+msgstr "HTTP 单播"
+
+msgid "Serves every channel as an HTTP TS stream plus a playlist and a status page."
+msgstr "每个频道对外提供 HTTP TS 流，并附带播放列表和状态页。"
+
+msgid "HTTP port"
+msgstr "HTTP 端口"
+
+msgid "Default 4242. Browse to http://<router>:<port>/ for the playlist."
+msgstr "默认 4242，浏览器打开 http://<路由器IP>:<端口>/ 查看播放列表。"
+
+msgid "Multicast port"
+msgstr "组播端口"
+
+msgid "Multicast TTL"
+msgstr "组播 TTL"
+
+msgid "1 = local network only."
+msgstr "1 = 仅本网段。"
+
+msgid "Multicast interface"
+msgstr "组播出口网卡"
+
+msgid "Interface to send multicast on, e.g. br-lan. Empty = system default."
+msgstr "发送组播用的网卡，如 br-lan；留空则用系统默认。"
+
+msgid "RTP headers (multicast only)"
+msgstr "加 RTP 头（仅组播）"
+
+msgid "SAP announcements"
+msgstr "SAP 公告"
+
+msgid "Lets VLC and set-top boxes discover the streams automatically."
+msgstr "让 VLC、机顶盒自动发现这些流。"
+
+msgid "SAP playlist group"
+msgstr "SAP 分组名"
+
+msgid "HLS output"
+msgstr "HLS 输出"
+
+msgid "Writes HLS chunks into a directory served by an HTTP server."
+msgstr "把 HLS 切片写入目录，由 HTTP 服务器对外提供。"
+
+msgid "HLS directory"
+msgstr "HLS 目录"
+
+msgid "Leave empty for the mumudvb default (/tmp)."
+msgstr "留空则使用 mumudvb 默认值（/tmp）。"
+
+msgid "Rewrite PAT"
+msgstr "重写 PAT"
+
+msgid "Rewrite SDT"
+msgstr "重写 SDT"
+
+msgid "DVR buffer size"
+msgstr "DVR 缓冲区大小"
+
+msgid "In TS packets, default 20. Raise it for T2-MI or high bitrate muxes."
+msgstr "单位 TS 包，默认 20；T2-MI 或高码率复用流建议调大。"
+
+msgid "Log destination"
+msgstr "日志输出"
+
+msgid "console (captured by procd/syslog)"
+msgstr "控制台（由 procd 收进 syslog）"
+
+msgid "syslog"
+msgstr "syslog"
+
+msgid "Configuration saved. Restart the service to apply it."
+msgstr "配置已保存，重启服务后生效。"
+
+msgid "Unable to save: %s"
+msgstr "保存失败：%s"
+
+msgid "Sample file not found."
+msgstr "未找到示例文件。"
+
+msgid "MuMuDVB configuration file"
+msgstr "MuMuDVB 配置文件"
+
+msgid "Only used when \"Use a custom configuration file\" is enabled on the settings page."
+msgstr "仅在设置页开启“使用自定义配置文件”时生效。"
+
+msgid "Load sample"
+msgstr "载入示例"
+
+msgid "Save"
+msgstr "保存"

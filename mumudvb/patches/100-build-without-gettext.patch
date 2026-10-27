@@ -1,0 +1,63 @@
+From: OpenWrt packaging <nobody@example.org>
+Subject: [PATCH] configure.ac: build without gettext/autopoint on OpenWrt
+
+MuMuDVB does not call gettext() anywhere, yet configure.ac pulls in
+AM_GNU_GETTEXT_VERSION([0.15]) which makes autoreconf require autopoint
+(gettext) on the build host and, since there is no po/ directory, makes
+the generated build system fragile.
+
+Iconv is provided by the C library on both musl and glibc, so AM_ICONV
+(which needs gettext's iconv.m4) is dropped as well and HAVE_ICONV is
+defined directly.
+
+Additional small cleanups required by modern autoconf/automake:
+ - AC_PROG_CC_STDC is obsolete, AC_PROG_CC is enough
+ - AC_HEADER_RESOLV is obsolete and HAVE_RESOLV_H is not used anywhere
+ - AC_CONFIG_MACRO_DIR([m4]) points to a directory that does not exist
+ - AC_INIT computed the version by running "git rev-parse HEAD", which
+   fails in a release tarball / exported git tree
+
+---
+ configure.ac |   15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -2,23 +2,23 @@
+ # Process this file with autoconf to produce a configure script.
+ 
+ AC_PREREQ([2.61])
+-AC_INIT([MuMuDVB], [m4_join([_], [2.1.0], m4_chomp_all(m4_esyscmd([git rev-parse HEAD])))], [mumudvb@braice.net])
++AC_INIT([MuMuDVB], [2.1.0], [mumudvb@braice.net])
+ AC_CONFIG_SRCDIR([src/mumudvb.c])
+-AC_CONFIG_MACRO_DIR([m4])
+ AM_INIT_AUTOMAKE
+ AC_CONFIG_HEADERS([src/config.h])
+ 
+ # Checks for programs.
+ AC_PROG_CC
+-AC_PROG_CC_STDC
+ AC_PROG_INSTALL
+ AC_PROG_MAKE_SET
+ 
+ dnl
+-dnl Iconv stuff
++dnl Iconv stuff: iconv() is provided by the C library (musl/glibc), so
++dnl neither gettext nor libiconv is needed to build MuMuDVB on OpenWrt.
+ dnl
+-AM_GNU_GETTEXT_VERSION([0.15])
+-AM_ICONV
++AC_CHECK_HEADERS([iconv.h], [
++	AC_DEFINE([HAVE_ICONV], [1], [Define if you have the iconv() function])
++])
+ 
+ dnl
+ dnl dvb-api support (disable on request or check existence of header)
+@@ -156,7 +156,6 @@
+ fi
+ 
+ # Checks for header files.
+-AC_HEADER_RESOLV
+ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h unistd.h values.h])
+ 
+ # Checks for typedefs, structures, and compiler characteristics.

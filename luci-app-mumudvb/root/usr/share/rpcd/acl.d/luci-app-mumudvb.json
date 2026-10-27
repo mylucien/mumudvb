@@ -1,0 +1,27 @@
+{
+	"luci-app-mumudvb": {
+		"description": "Grant access to the MuMuDVB configuration and service control",
+		"read": {
+			"file": {
+				"/etc/config/mumudvb": [ "read" ],
+				"/etc/mumudvb/*": [ "read" ],
+				"/var/etc/mumudvb/*": [ "read" ]
+			},
+			"ubus": {
+				"service": [ "list" ]
+			},
+			"uci": [ "mumudvb" ]
+		},
+		"write": {
+			"file": {
+				"/etc/config/mumudvb": [ "write" ],
+				"/etc/mumudvb/*": [ "write" ],
+				"/etc/init.d/mumudvb": [ "exec" ],
+				"/sbin/logread": [ "exec" ],
+				"/bin/logread": [ "exec" ],
+				"/usr/bin/logread": [ "exec" ]
+			},
+			"uci": [ "mumudvb" ]
+		}
+	}
+}

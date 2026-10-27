@@ -1,0 +1,67 @@
+# MuMuDVB 示例配置（手动模式用）
+#
+# 用法：
+#   cp /etc/mumudvb/mumudvb.conf.sample /etc/mumudvb/mumudvb.conf
+#   然后把 /etc/config/mumudvb 里 main 段的 custom 改成 '1'
+#   /etc/init.d/mumudvb restart
+#
+# 完整参数说明见上游文档 doc/README_CONF.asciidoc（mumudvb.net）。
+# 注意：行内注释是不允许的，注释必须独占一行。
+
+# ---------- 调谐 ----------
+# 适配器序号（对应 /dev/dvb/adapterN）
+card=0
+tuner=0
+
+# 地面波：frequency 用 Hz 或 MHz 都行；卫星必须用 MHz
+delivery_system=DVBT
+freq=474000000
+bandwidth=8MHz
+
+# 有线（DVB-C）示例：
+#delivery_system=DVBC_ANNEX_AC
+#freq=323000000
+#srate=6875
+#modulation=QAM256
+
+# 卫星（DVB-S2）示例：
+#delivery_system=DVBS2
+#freq=11987
+#pol=H
+#srate=27500
+#sat_number=1
+#lnb_type=universal
+
+# ---------- 自动发现频道 ----------
+# full = 自动发现转发器里所有频道并持续跟随变化
+autoconfiguration=full
+
+# 每个频道分配的多播地址；%number 是频道序号
+autoconf_ip4=239.100.%card.%number
+common_port=1234
+multicast_ttl=2
+
+# 只转发指定的 SID（可选）
+#autoconf_sid_list_ignore=1 2 3
+
+# ---------- HTTP 单播 ----------
+# 浏览器打开 http://<路由器IP>:4242/ 看频道列表（m3u + 状态页）
+unicast=1
+ip_http=0.0.0.0
+port_http=4242
+
+# ---------- 输出表 ----------
+rewrite_pat=1
+rewrite_sdt=1
+
+# ---------- 日志 ----------
+# 由 procd 接管 stdout，故保持默认（console）即可，日志进 syslog
+#log_type=syslog
+#log_file=/var/log/mumudvb.log
+
+# ---------- 手工指定频道（不用 autoconfiguration 时）----------
+#new_channel
+#name=CCTV-1
+#ip=239.100.0.1
+#port=1234
+#pids=512 650 651
