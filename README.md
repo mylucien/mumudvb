@@ -1,11 +1,13 @@
 # MuMuDVB for PonWrt / ImmortalWrt (LuCI 24.10 JS)
 
-两个可以直接丢进源码树编译的软件包：
+本仓库就是一个 OpenWrt feed，包含两个可以直接编译的软件包：
 
 | 目录 | 包名 | 说明 |
 |---|---|---|
 | `mumudvb/` | `mumudvb` | 守护进程 + UCI 默认配置 + procd init 脚本 + 手写配置样例 |
 | `luci-app-mumudvb/` | `luci-app-mumudvb` | LuCI 界面（JS 版，适配 LuCI 24.10 / ImmortalWrt master） |
+
+仓库地址：<https://github.com/mylucien/mumudvb>
 
 针对 `https://github.com/pbs05/ponwrt`：该树基于 ImmortalWrt，luci feed 是
 `immortalwrt/luci` master，即 **LuCI 24.10 的 JS 架构**（`htdocs/luci-static/resources/view/*.js` +
@@ -13,22 +15,32 @@
 
 ---
 
-## 一、放到源码里
+## 一、加到源码里
+
+仓库本身就是一个 **OpenWrt feed**（根目录下直接是包目录），三种加法任选：
 
 ```sh
 git clone https://github.com/pbs05/ponwrt.git
 cd ponwrt
 
-# 方式 A：直接塞进 package/
-cp -r /path/to/mumudvb-pkgs/mumudvb            package/
-cp -r /path/to/mumudvb-pkgs/luci-app-mumudvb   package/
+# 方式 A（推荐）：当 git feed，以后 git pull 就能更新
+echo 'src-git mumudvb https://github.com/mylucien/mumudvb.git' >> feeds.conf.default
+./scripts/feeds update mumudvb
+./scripts/feeds install -a -p mumudvb
 
-# 方式 B（推荐）：当本地 feed，方便以后 git 管理
-mkdir -p /opt/mumudvb-feed
-cp -r /path/to/mumudvb-pkgs/* /opt/mumudvb-feed/
+# 方式 B：直接塞进 package/
+git clone https://github.com/mylucien/mumudvb.git /tmp/mumudvb-feed
+cp -r /tmp/mumudvb-feed/mumudvb            package/
+cp -r /tmp/mumudvb-feed/luci-app-mumudvb   package/
+
+# 方式 C：本地 src-link feed（改代码不用提交）
+git clone https://github.com/mylucien/mumudvb.git /opt/mumudvb-feed
 echo 'src-link mumudvb /opt/mumudvb-feed' >> feeds.conf.default
-./scripts/feeds update -a && ./scripts/feeds install -a
+./scripts/feeds update mumudvb && ./scripts/feeds install -a -p mumudvb
 ```
+
+> 用方式 A/C 时，`./scripts/feeds install` 会在 `package/feeds/mumudvb/` 下建软链接，
+> 之后改代码要改 feed 目录里的那份，不能改 `package/feeds/` 下的链接。
 
 ## 二、选中并编译
 
