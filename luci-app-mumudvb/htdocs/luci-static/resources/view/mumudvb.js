@@ -240,7 +240,7 @@ return view.extend({
 		o.value('QAM64', 'QAM64');
 		o.value('QAM128', 'QAM128');
 		o.value('QAM256', 'QAM256');
-		o.value('QAM_AUTO', 'QAM AUTO');
+		o.value('QAMAUTO', _('QAM auto'));
 		o.value('QPSK', 'QPSK');
 		o.value('8PSK', '8PSK');
 		o.depends('delivery_system', 'DVBC_ANNEX_AC');
@@ -307,7 +307,7 @@ return view.extend({
 		o.modalonly = true;
 
 		o = s.option(form.Value, 'port_http', _('HTTP port'),
-			_('Default 4242. Browse to http://<router>:<port>/ for the playlist.'));
+			_('Default 4242. / is the index page, /playlist.m3u the playlist, /bynumber/1 the first channel.'));
 		o.default = '4242';
 		o.datatype = 'port';
 		o.depends('unicast', '1');

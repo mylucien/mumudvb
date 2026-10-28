@@ -48,7 +48,7 @@ echo 'src-link mumudvb /opt/mumudvb-feed' >> feeds.conf.default
 make menuconfig
 #   Multimedia  -> <*> mumudvb
 #   LuCI        -> Applications -> <*> luci-app-mumudvb
-#                                 <*> luci-i18n-mumudvb-zh-cn   (中文界面，必选)
+#                                 <*> luci-i18n-mumudvb-zh-cn
 #                                 <*> luci-base (已默认)
 
 make -j$(nproc)
@@ -57,8 +57,13 @@ make package/mumudvb/compile V=s
 make package/luci-app-mumudvb/compile V=s
 ```
 
-> `luci-i18n-mumudvb-zh-cn` 由 `luci.mk` 从 `po/zh_Hans/mumudvb.po` 自动生成。
-> 不选它界面就是英文（功能不受影响）。
+> `luci-i18n-mumudvb-zh-cn` 由 `luci.mk` 从 `po/zh_Hans/mumudvb.po` 自动生成，是 HIDDEN 包，
+> `DEFAULT:=LUCI_LANG_zh_cn||(ALL&&m)` —— 只要你的固件开了中文语言包，它会自动被选中，
+> 不用手动勾。没选中也能用，只是界面回到英文。
+
+> 方式 B 把包复制到 `package/` 下时，`luci-app-mumudvb/Makefile` 里的
+> `include $(TOPDIR)/feeds/luci/luci.mk` 依然要求 **luci feed 已经 update 过**
+> （正常情况下 `./scripts/feeds update -a` 都会跑，`feeds/luci/luci.mk` 存在即可）。
 
 前置条件：宿主机需要 `autoconf`、`automake`（mumudvb 用 autotools，包内已加
 `PKG_FIXUP:=autoreconf`）。Debian/Ubuntu：
@@ -142,9 +147,14 @@ logread -e mumudvb
 # 看生成的配置
 cat /var/etc/mumudvb/card0.conf
 
-# HTTP 单播（unicast=1 时）
-# 浏览器打开 http://<路由器IP>:4242/   有频道 m3u 和状态页
-# VLC：媒体 -> 打开网络串流 -> http://<路由器IP>:4242/1.ts
+# HTTP 单播（unicast=1 时），上游只有这几条路径：
+#   http://<路由器IP>:4242/         索引页
+#   http://<路由器IP>:4242/playlist.m3u        m3u 播放列表（可直接丢给 VLC）
+#   http://<路由器IP>:4242/channels_list.html   频道状态页
+#   http://<路由器IP>:4242/bynumber/1           第 1 个频道（序号）
+#   http://<路由器IP>:4242/bysid/1025           按 SID 取频道
+#   http://<路由器IP>:4242/byname/CCTV-1        按频道名取
+# 注意没有 /1.ts 这种写法。
 
 # 组播（默认 autoconf_ip4=239.100.%card.%number，端口 1234）
 # VLC 打开 udp://@239.100.0.1:1234

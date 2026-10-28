@@ -17,7 +17,10 @@ PKG_RELEASE:=1
 PKG_LICENSE:=Apache-2.0
 PKG_MAINTAINER:=
 
-include ../../luci.mk
+# 本包不在 feeds/luci/applications/ 下，所以不能用 ../../luci.mk，
+# 必须显式指向 luci feed 里的 luci.mk（feeds update 后才会存在）。
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
-$(eval $(call BuildPackage,luci-app-mumudvb))
+# 注意：luci.mk 末尾已经对所有包（含 luci-i18n-*）调用过 BuildPackage，
+# 这里绝对不能再写 $(eval $(call BuildPackage,...))，否则重复定义。

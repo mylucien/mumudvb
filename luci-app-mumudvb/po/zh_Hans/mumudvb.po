@@ -181,6 +181,9 @@ msgstr "仅有线/卫星，单位 kSym/s（如 6875 或 27500）。"
 msgid "Modulation"
 msgstr "调制方式"
 
+msgid "QAM auto"
+msgstr "QAM 自动"
+
 msgid "Polarisation"
 msgstr "极化方式"
 
@@ -253,8 +256,8 @@ msgstr "每个频道对外提供 HTTP TS 流，并附带播放列表和状态页
 msgid "HTTP port"
 msgstr "HTTP 端口"
 
-msgid "Default 4242. Browse to http://<router>:<port>/ for the playlist."
-msgstr "默认 4242，浏览器打开 http://<路由器IP>:<端口>/ 查看播放列表。"
+msgid "Default 4242. / is the index page, /playlist.m3u the playlist, /bynumber/1 the first channel."
+msgstr "默认 4242。可用路径：/ 索引页、/playlist.m3u 播放列表、/bynumber/1 第 1 个频道（另有 /bysid/<SID>、/byname/<名称>）。"
 
 msgid "Multicast port"
 msgstr "组播端口"
