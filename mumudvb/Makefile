@@ -13,9 +13,26 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/braice/MuMuDVB.git
 PKG_SOURCE_VERSION:=ce2db87f2341b73e639d3248de7a841339d91716
 PKG_SOURCE_DATE:=2026-09-13
-PKG_VERSION:=2.1.0+git20260913
 PKG_RELEASE:=1
-PKG_MIRROR_HASH:=skip
+
+# 故意不写 PKG_VERSION，原因有两个：
+#
+# 1) apk 的版本号语法只接受 [0-9.]、单个字母、_<suffix>、~<hex>、-r<N>。
+#    '+' 落在 apk-tools src/version.c 的 default 分支 -> TOKEN_INVALID，
+#    接着 src/apk_adb.c version_fromstring() 返回 APKE_PKGVERSION_FORMAT，
+#    apk mkpkg 打印 "info field 'version' has invalid value" 并以 99 退出
+#    （src/apk.c: if (r > 99) r = 99; ），make 里就表现为
+#    "[...]/mumudvb-2.1.0+git20260913-r1.apk] Error 99"。
+#    不写 PKG_VERSION 时 OpenWrt 会从 SOURCE_DATE + SOURCE_VERSION 推导：
+#        2026.09.13~ce2db87f
+#    这个形式 apk 完全合法（~ 后跟 16 进制 commit 前缀）。
+#
+# 2) 不写 PKG_MIRROR_HASH（哪怕是 =skip）：只要它非空，OpenWrt 的 wrap_mirror
+#    就会先去 sources.openwrt.org 探测同名 tarball，git 源必然 404，
+#    白白在日志里刷一堆 "curl: (22) ... 404"。留空则直接走 github_archive /
+#    裸 git clone，不碰镜像。
+#
+# 改版本时只动上面两行（SOURCE_VERSION / SOURCE_DATE），版本号会自动跟着变。
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=COPYING

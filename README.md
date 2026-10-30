@@ -123,16 +123,26 @@ config tuner 'card0'
 
 ## 五、版本
 
-固定在上游 `mumudvb2` 分支 commit `ce2db87f23`（2026-09-13），
-`PKG_MIRROR_HASH:=skip` 所以不需要预置下载哈希。
+固定在上游 `mumudvb2` 分支 commit `ce2db87f23`（2026-09-13）。
 
-改版本只需动 `mumudvb/Makefile` 三行：
+改版本只需动 `mumudvb/Makefile` 两行（**不要**加 `PKG_VERSION`）：
 
 ```make
 PKG_SOURCE_VERSION:=<新的 commit sha>
 PKG_SOURCE_DATE:=<日期>
-PKG_VERSION:=2.1.0+git<日期>
 ```
+
+包版本由 OpenWrt 自动推导成 `2026.09.13~ce2db87f` 这种形式。
+
+> ⚠️ 别写 `PKG_VERSION:=2.1.0+git20260913` 这种带 `+` 的版本号。
+> apk 的版本号只接受 `[0-9.]`、字母、`_suffix`、`~<hex>`、`-r<N>`，
+> `+` 非法（apk-tools `src/version.c` 走 default → `TOKEN_INVALID`，
+> `src/apk_adb.c` 的 `version_fromstring()` 返回 `APKE_PKGVERSION_FORMAT`），
+> `apk mkpkg` 会以 99 退出，构建日志里就是
+> `[...]/mumudvb-....apk] Error 99`。
+>
+> 同时**不要设 `PKG_MIRROR_HASH`**（包括 `:=skip`）：只要非空，OpenWrt 会先去
+> `sources.openwrt.org` 探测同名 tarball，git 源必然 404，日志里刷一堆 curl 报错。
 
 > 上游 2.1.0 之后的提交修了不少现代 GCC/musl 的问题
 > （`sys/poll.h` → POSIX `poll.h`、gcc15、`-std=c23` 等），所以不要退回 2.1.0 tag。
@@ -164,6 +174,8 @@ cat /var/etc/mumudvb/card0.conf
 
 | 现象 | 原因 / 处理 |
 |---|---|
+| 打包阶段 `[...]/*.apk] Error 99` | apk 的错误被钳到 99。看上一行有没有 `info field 'version' has invalid value`：`PKG_VERSION` 里出现了 `+` 等非法字符。本包已改为不设 `PKG_VERSION`，由 OpenWrt 推导 |
+| 日志里 `curl: (22) ... 404`（git 源） | 设了 `PKG_MIRROR_HASH` 导致先去官方镜像探测。删掉该行即可 |
 | `mumudvb` 起不来，日志 `cannot open /dev/dvb/adapter0` | 适配器序号填错，或 DVB 模块没加载 |
 | 生成配置里没有 `freq` | LuCI 里频率是必填项，`uci show mumudvb` 确认 |
 | LuCI 页面 403 / 空白 | 没装 `luci-base`，或没更新 luci feed |
