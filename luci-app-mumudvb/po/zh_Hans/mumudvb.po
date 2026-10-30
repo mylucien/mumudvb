@@ -7,23 +7,14 @@ msgstr ""
 "Language: zh_Hans\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-msgid "running"
-msgstr "运行中"
+msgid "MuMuDVB restarted."
+msgstr "MuMuDVB 已重启。"
 
-msgid "stopped"
-msgstr "已停止"
+msgid "Restart failed (code %d)."
+msgstr "重启失败（退出码 %d）。"
 
-msgid "Service state"
-msgstr "服务状态"
-
-msgid "No log entries yet."
-msgstr "暂无日志"
-
-msgid "MuMuDVB status"
-msgstr "MuMuDVB 状态"
-
-msgid "Close"
-msgstr "关闭"
+msgid "Restart failed: %s"
+msgstr "重启失败：%s"
 
 msgid "MuMuDVB"
 msgstr "MuMuDVB"
@@ -58,17 +49,14 @@ msgstr "配置文件路径"
 msgid "Service"
 msgstr "服务"
 
-msgid "Show status and log"
-msgstr "查看状态与日志"
+msgid "Status and log"
+msgstr "状态与日志"
 
 msgid "Control"
 msgstr "控制"
 
 msgid "Restart now"
 msgstr "立即重启"
-
-msgid "Restarting MuMuDVB…"
-msgstr "正在重启 MuMuDVB…"
 
 msgid "Tuners"
 msgstr "调谐器"
@@ -318,6 +306,42 @@ msgstr "控制台（由 procd 收进 syslog）"
 
 msgid "syslog"
 msgstr "syslog"
+
+msgid "Unable to read log: %s"
+msgstr "读取日志失败：%s"
+
+msgid "No instance is running."
+msgstr "没有实例在运行。"
+
+msgid "Instance"
+msgstr "实例"
+
+msgid "State"
+msgstr "状态"
+
+msgid "PID"
+msgstr "PID"
+
+msgid "running"
+msgstr "运行中"
+
+msgid "stopped"
+msgstr "已停止"
+
+msgid "Log"
+msgstr "日志"
+
+msgid "No log entries yet."
+msgstr "暂无日志"
+
+msgid "MuMuDVB status"
+msgstr "MuMuDVB 状态"
+
+msgid "Per-instance state from procd and the recent mumudvb syslog lines."
+msgstr "各实例的运行状态（来自 procd）以及最近的 mumudvb 日志。"
+
+msgid "Refresh"
+msgstr "刷新"
 
 msgid "Configuration saved. Restart the service to apply it."
 msgstr "配置已保存，重启服务后生效。"

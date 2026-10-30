@@ -10,9 +10,20 @@
 			"acl": [ "luci-app-mumudvb" ]
 		}
 	},
+	"admin/services/mumudvb/status": {
+		"title": "状态与日志",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "mumudvb_status"
+		},
+		"depends": {
+			"acl": [ "luci-app-mumudvb" ]
+		}
+	},
 	"admin/services/mumudvb/editor": {
 		"title": "配置文件",
-		"order": 10,
+		"order": 2,
 		"action": {
 			"type": "view",
 			"path": "mumudvb_editor"

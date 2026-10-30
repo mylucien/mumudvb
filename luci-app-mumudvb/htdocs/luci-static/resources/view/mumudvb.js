@@ -4,7 +4,6 @@
 'require fs';
 'require uci';
 'require ui';
-'require rpc';
 
 /*
  * MuMuDVB 设置页
@@ -13,63 +12,29 @@
  * /etc/init.d/mumudvb 在启动/重载时生成。
  * UCI 选项名与 mumudvb 配置指令同名，因此这里是 1:1 透传，
  * 想要 mumudvb 的完整能力（模板、逐频道 PID 等）请用"配置文件"页面。
+ *
+ * 注意：这里刻意不在 onclick 里做异步 UI（弹窗/拉日志）。
+ * LuCI 的 ui.createHandlerFn 会先把按钮 disabled + spinning，等 promise
+ * settle 才恢复；一旦 promise 抛错或挂住，按钮就永久灰掉，看起来就是
+ * "点了没反应"。所以状态信息放到独立的 view/mumudvb_status.js 页面上。
  */
 
-var callServiceList = rpc.declare({
-	object: 'service',
-	method: 'list',
-	params: [ 'name' ],
-	expect: { '': {} }
-});
+var STATUS_PAGE = 'admin/services/mumudvb/status';
 
-function run(cmd, args) {
-	return fs.exec(cmd, args || []).then(function (res) {
-		return res || {};
-	}).catch(function (err) {
-		return { code: -1, stdout: '', stderr: String(err) };
-	});
-}
+function restartService() {
+	return fs.exec('/etc/init.d/mumudvb', [ 'restart' ]).then(function (res) {
+		var code = (res && res.code != null) ? res.code : -1;
 
-function showStatus() {
-	return Promise.all([
-		callServiceList('mumudvb').catch(function () { return {}; }),
-		run('/sbin/logread', [ '-e', 'mumudvb' ])
-	]).then(function (res) {
-		var instances = ((res[0] || {}).mumudvb || {}).instances || {};
-		var names = Object.keys(instances).sort();
-		var log = String(res[1].stdout || '').trim();
-		var body = [];
-
-		if (!log.length)
-			log = String(res[1].stderr || '').trim();
-
-		if (names.length) {
-			body.push(E('ul', { 'style': 'margin:0 0 12px 0' }, names.map(function (name) {
-				var inst = instances[name] || {};
-				return E('li', {}, [
-					E('strong', {}, name + ': '),
-					inst.running ? _('running') : _('stopped'),
-					(inst.pid ? ' (pid ' + inst.pid + ')' : '')
-				]);
-			})));
+		if (code === 0) {
+			ui.addNotification(null, E('p', {}, _('MuMuDVB restarted.')));
 		}
 		else {
-			body.push(E('p', {}, [
-				E('strong', {}, _('Service state') + ': '),
-				_('stopped')
-			]));
+			var msg = String((res && res.stderr) || '').trim();
+			ui.addNotification(null, E('p', {},
+				_('Restart failed (code %d).').format(code) + (msg ? ' ' + msg : '')));
 		}
-
-		body.push(E('pre', {
-			'style': 'max-height:45vh;overflow:auto;white-space:pre-wrap;font-family:monospace;font-size:12px'
-		}, log.length ? log : _('No log entries yet.')));
-
-		ui.showModal(_('MuMuDVB status'), body, [
-			E('button', {
-				'class': 'btn',
-				'click': ui.hideModal
-			}, _('Close'))
-		]);
+	}).catch(function (err) {
+		ui.addNotification(null, E('p', {}, _('Restart failed: %s').format(err)));
 	});
 }
 
@@ -108,20 +73,20 @@ return view.extend({
 		o.rmempty = false;
 
 		o = s.option(form.Button, '_status', _('Service'));
-		o.inputtitle = _('Show status and log');
+		o.inputtitle = _('Status and log');
 		o.inputstyle = 'action';
 		o.onclick = function () {
-			return showStatus();
+			/* 直接跳转到独立的状态页：不涉及异步 UI，
+			   不会出现按钮被 disabled 后卡住的情况 */
+			window.location.href = L.url(STATUS_PAGE);
+			return Promise.resolve();
 		};
 
 		o = s.option(form.Button, '_restart', _('Control'));
 		o.inputtitle = _('Restart now');
 		o.inputstyle = 'apply';
 		o.onclick = function () {
-			ui.addNotification(null, E('p', {}, _('Restarting MuMuDVB…')));
-			return run('/etc/init.d/mumudvb', [ 'restart' ]).then(function () {
-				return showStatus();
-			});
+			return restartService();
 		};
 
 		/* ------------------------------------------------------------------ */
