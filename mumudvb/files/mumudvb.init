@@ -33,9 +33,22 @@ GLOBAL_OPTS="autoconfiguration autoconf_ip4 autoconf_ip6 autoconf_radios \
 	tuning_timeout timeout_no_diff check_status dont_send_scrambled \
 	filter_transport_error log_type log_header"
 
+# 界面上有默认值、但旧配置里可能根本没有这个键（升级前建的 section、手写的
+# /etc/config/mumudvb 都可能缺）。不在这里补的话，生成的配置文件就会少这一行，
+# mumudvb 退回它自己的内置默认：autoconfiguration 的内置默认是 none，
+# 于是出现「LuCI 里显示 full、锁上台了却是 Diffusion 0 channel」这种假象。
+# 只补那些内置默认与界面默认不一致的选项。
+ui_default() {
+	case "$1" in
+	autoconfiguration) echo full ;;
+	*) echo "" ;;
+	esac
+}
+
 emit() {
 	local val
 	config_get val "$1" "$2"
+	[ -n "$val" ] || val="$(ui_default "$2")"
 	[ -n "$val" ] && echo "$2=$val"
 	return 0
 }
