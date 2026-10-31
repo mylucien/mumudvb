@@ -20,6 +20,50 @@ var callServiceList = rpc.declare({
 	expect: { '': {} }
 });
 
+/* 与 /etc/uci-defaults/95-mumudvb-hls 里的 listen_http 对应 */
+var HLS_PORT = '8090';
+
+/*
+ * 探 HLS 网关是否可达。
+ *
+ * 用 mode:'no-cors'：这个网关是 CGI，不返回 Access-Control-Allow-Origin，
+ * 普通 fetch 会被浏览器拦掉，就分不清"服务没起"和"CORS 拒绝"了。
+ * no-cors 下拿不到响应内容，但网络层失败仍然会 reject，判断可达性够用。
+ */
+function probeHls() {
+	return window.fetch(
+		'http://' + window.location.hostname + ':' + HLS_PORT + '/playlist.m3u8',
+		{ mode: 'no-cors', cache: 'no-store' }
+	).then(function () {
+		return true;
+	}).catch(function () {
+		return false;
+	});
+}
+
+/*
+ * HLS 目录和占用。目录来自 init 写的 hls_root，而不是写死 /tmp/hls ——
+ * 用户改过 hls_storage_dir 时这里要跟着变。
+ */
+function readHlsInfo() {
+	return fs.read('/var/etc/mumudvb/hls_root').then(function (res) {
+		var dir = String(res || '').trim();
+
+		if (!dir)
+			return { dir: '', size: '' };
+
+		return fs.exec('/usr/bin/du', [ '-sh', dir ]).then(function (r) {
+			var out = String((r && r.stdout) || '').trim();
+
+			return { dir: dir, size: out ? out.split(/\s+/)[0] : '' };
+		}).catch(function () {
+			return { dir: dir, size: '' };
+		});
+	}).catch(function () {
+		return { dir: '', size: '' };
+	});
+}
+
 function readLog() {
 	/* -l 200：只取最后 200 条，crash loop 时日志会刷到几十万字符，
 	   全量返回会把浏览器卡住 */
@@ -38,7 +82,9 @@ function readLog() {
 function query() {
 	return Promise.all([
 		callServiceList('mumudvb').catch(function () { return {}; }),
-		readLog()
+		readLog(),
+		probeHls(),
+		readHlsInfo()
 	]).then(function (res) {
 		var instances = ((res[0] || {}).mumudvb || {}).instances || {};
 		var names = Object.keys(instances).sort();
@@ -52,10 +98,13 @@ function query() {
 					pid: inst.pid || ''
 				};
 			}),
-			log: res[1]
+			log: res[1],
+			hlsUp: res[2],
+			hlsDir: (res[3] || {}).dir || '',
+			hlsSize: (res[3] || {}).size || ''
 		};
 	}).catch(function (err) {
-		return { rows: [], log: '', error: String(err) };
+		return { rows: [], log: '', error: String(err), hlsUp: false, hlsDir: '', hlsSize: '' };
 	});
 }
 
@@ -82,9 +131,31 @@ function renderTable(data) {
 	]);
 }
 
+function renderGateway(data) {
+	var rows = [
+		E('tr', { 'class': 'tr' }, [
+			E('td', { 'class': 'td' }, _('HLS gateway')),
+			E('td', { 'class': 'td' }, data.hlsUp
+				? _('reachable on port %s').format(HLS_PORT)
+				: _('not reachable — check the mumudvb_hls instance in /etc/config/uhttpd'))
+		])
+	];
+
+	rows.push(E('tr', { 'class': 'tr' }, [
+		E('td', { 'class': 'td' }, _('HLS directory')),
+		E('td', { 'class': 'td' }, data.hlsDir
+			? data.hlsDir + (data.hlsSize ? ' (' + data.hlsSize + ')' : '')
+			: _('unknown — the service has not been started yet'))
+	]));
+
+	return E('table', { 'class': 'table' }, rows);
+}
+
 function renderBody(data) {
 	return E('div', {}, [
 		renderTable(data),
+		E('h3', {}, _('Output')),
+		renderGateway(data),
 		E('h3', {}, _('Log')),
 		E('pre', {
 			'style': 'max-height:50vh;overflow:auto;white-space:pre-wrap;font-family:monospace;font-size:12px'

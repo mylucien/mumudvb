@@ -21,6 +21,56 @@
 
 var STATUS_PAGE = 'admin/services/mumudvb/status';
 
+/* HLS 网关端口，和 /etc/uci-defaults/95-mumudvb-hls 里的 listen_http 对应 */
+var HLS_PORT = '8090';
+
+function urlFor(port, path) {
+	return 'http://' + window.location.hostname + (port ? ':' + port : '') + path;
+}
+
+/* navigator.clipboard 只在安全上下文可用，而 LuCI 一般跑在 http://<ip>，
+   所以必须有 execCommand 这条回退路径，否则按钮在 http 下完全没反应 */
+function copyText(text) {
+	if (window.isSecureContext && window.navigator.clipboard) {
+		window.navigator.clipboard.writeText(text).catch(function () {});
+	}
+	else {
+		var ta = document.createElement('textarea');
+		ta.value = text;
+		ta.style.position = 'fixed';
+		ta.style.left = '-9999px';
+		document.body.appendChild(ta);
+		ta.select();
+		try { document.execCommand('copy'); } catch (e) {}
+		document.body.removeChild(ta);
+	}
+
+	ui.addNotification(null, E('p', {}, _('Copied: %s').format(text)), 'info');
+}
+
+/* 带超时的 fetch + JSON。不套超时的话，服务没起时这个请求会挂很久 */
+function fetchJSON(url, ms) {
+	return new Promise(function (resolve, reject) {
+		var ctl = null, timer;
+
+		if (typeof AbortController !== 'undefined') {
+			ctl = new AbortController();
+			timer = window.setTimeout(function () { ctl.abort(); }, ms);
+		}
+		else {
+			timer = window.setTimeout(function () { reject(new Error('timeout')); }, ms);
+		}
+
+		window.fetch(url, ctl ? { signal: ctl.signal, cache: 'no-store' } : { cache: 'no-store' })
+			.then(function (r) {
+				if (!r.ok) throw new Error('HTTP ' + r.status);
+				return r.json();
+			})
+			.then(function (j) { window.clearTimeout(timer); resolve(j); })
+			.catch(function (e) { window.clearTimeout(timer); reject(e); });
+	});
+}
+
 function restartService() {
 	return fs.exec('/etc/init.d/mumudvb', [ 'restart' ]).then(function (res) {
 		var code = (res && res.code != null) ? res.code : -1;
@@ -36,6 +86,140 @@ function restartService() {
 	}).catch(function (err) {
 		ui.addNotification(null, E('p', {}, _('Restart failed: %s').format(err)));
 	});
+}
+
+/*
+ * 「输出地址」卡片：三个总入口，纯静态推算，不等服务起来。
+ *
+ * 刻意不用 cbi-section-node 装这一块：部分主题里它是
+ * display:flex; flex-direction:column（argon），子元素会被 stretch 拉满整行。
+ */
+function sectionLinks(tuner) {
+	var sec = E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('Output addresses')) ]);
+
+	if (!tuner) {
+		sec.appendChild(E('p', { 'class': 'cbi-value-description' }, _('Add a tuner first.')));
+		return sec;
+	}
+
+	var cfg = tuner['.name'];
+	var uport = uci.get('mumudvb', cfg, 'port_http') || '4242';
+	var uOn = uci.get('mumudvb', cfg, 'unicast') === '1';
+	var hOn = uci.get('mumudvb', cfg, 'hls') === '1';
+
+	function line(kind, desc, url, enabled, note) {
+		var td = E('td', { 'class': 'td' });
+
+		if (enabled) {
+			td.appendChild(E('a', { 'href': url, 'target': '_blank', 'rel': 'noopener' }, url));
+			td.appendChild(E('button', {
+				'type': 'button',
+				'class': 'btn cbi-button',
+				'style': 'margin-inline-start:.5rem;flex:0 0 auto;width:auto',
+				'click': function (ev) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					copyText(url);
+				}
+			}, _('Copy')));
+		}
+		else {
+			td.appendChild(E('span', { 'style': 'opacity:.55' }, url));
+			td.appendChild(E('span', { 'style': 'opacity:.55;margin-inline-start:.5rem' },
+				note || _('not enabled')));
+		}
+
+		return E('tr', { 'class': 'tr' }, [
+			E('td', { 'class': 'td', 'style': 'white-space:nowrap' }, kind),
+			E('td', { 'class': 'td' }, desc),
+			td
+		]);
+	}
+
+	var tbl = E('table', { 'class': 'table' }, [
+		E('tr', { 'class': 'tr table-titles' }, [
+			E('th', { 'class': 'th' }, _('Type')),
+			E('th', { 'class': 'th' }, _('What it is')),
+			E('th', { 'class': 'th' }, _('Address'))
+		]),
+		line(_('HTTP unicast'), _('Raw TS per channel, lowest latency, no disk use.'),
+			urlFor(uport, '/playlist.m3u'), uOn),
+		line(_('HLS'), _('Segment based, works in browsers; served by the gateway on port %s.').format(HLS_PORT) + ' ' +
+			_('iOS Safari may refuse streams whose audio is AC3 — use the HTTP unicast URL there instead.'),
+			urlFor(HLS_PORT, '/playlist.m3u8'), hOn)
+	]);
+
+	sec.appendChild(tbl);
+	sec.appendChild(E('p', { 'class': 'cbi-value-description' },
+		_('Multicast groups are generated from the autoconf_ip4 template; see the Multicast column below.')));
+
+	return sec;
+}
+
+/*
+ * 「频道与链接」卡片：从 mumudvb 自己的 4242 取 channels_list.json。
+ * 那边带 Access-Control-Allow-Origin: *，所以浏览器跨端口也能直接读。
+ */
+function sectionChannels(tuner) {
+	var sec = E('div', { 'class': 'cbi-section' }, [ E('h3', {}, _('Channels and links')) ]);
+	var box = E('div', {});
+
+	sec.appendChild(box);
+
+	if (!tuner) {
+		box.appendChild(E('p', { 'class': 'cbi-value-description' }, _('Add a tuner first.')));
+		return sec;
+	}
+
+	var cfg = tuner['.name'];
+	var uport = uci.get('mumudvb', cfg, 'port_http') || '4242';
+
+	box.appendChild(E('p', { 'class': 'cbi-value-description' }, _('Reading channels…')));
+
+	fetchJSON(urlFor(uport, '/channels_list.json'), 2500).then(function (list) {
+		box.innerHTML = '';
+
+		if (!Array.isArray(list) || !list.length) {
+			box.appendChild(E('p', { 'class': 'cbi-value-description' }, _('No channel discovered yet.')));
+			return;
+		}
+
+		var rows = [
+			E('tr', { 'class': 'tr table-titles' }, [
+				E('th', { 'class': 'th' }, '#'),
+				E('th', { 'class': 'th' }, _('Name')),
+				E('th', { 'class': 'th' }, _('SID')),
+				E('th', { 'class': 'th' }, _('Multicast')),
+				E('th', { 'class': 'th' }, _('HTTP TS')),
+				E('th', { 'class': 'th' }, _('HLS'))
+			])
+		];
+
+		list.forEach(function (c) {
+			var sid = c.service_id;
+
+			rows.push(E('tr', { 'class': 'tr' }, [
+				E('td', { 'class': 'td' }, String(c.number)),
+				E('td', { 'class': 'td' }, c.name + (c.is_up ? '' : ' ' + _('(not ready)'))),
+				E('td', { 'class': 'td' }, String(sid)),
+				E('td', { 'class': 'td' }, c.ip_multicast + ':' + c.port_multicast),
+				E('td', { 'class': 'td' }, E('a', {
+					'href': urlFor(uport, '/bysid/' + sid), 'target': '_blank', 'rel': 'noopener'
+				}, '/bysid/' + sid)),
+				E('td', { 'class': 'td' }, E('a', {
+					'href': urlFor(HLS_PORT, '/' + sid + '.m3u8'), 'target': '_blank', 'rel': 'noopener'
+				}, sid + '.m3u8'))
+			]));
+		});
+
+		box.appendChild(E('table', { 'class': 'table' }, rows));
+	}).catch(function () {
+		box.innerHTML = '';
+		box.appendChild(E('p', { 'class': 'cbi-value-description' },
+			_('Cannot read the channel list — HTTP unicast is disabled, the service is not running, or the port is not %s.').format(uport)));
+	});
+
+	return sec;
 }
 
 return view.extend({
@@ -342,6 +526,15 @@ return view.extend({
 		o.value('syslog', _('syslog'));
 		o.modalonly = true;
 
-		return m.render();
+		return m.render().then(function (formNode) {
+			var tuners = uci.sections('mumudvb', 'tuner') || [];
+			var tuner = tuners[0];
+
+			return E('div', {}, [
+				formNode,
+				sectionLinks(tuner),
+				sectionChannels(tuner)
+			]);
+		});
 	}
 });

@@ -173,31 +173,75 @@ cat /var/etc/mumudvb/card0.conf
 ### HLS
 
 mumudvb 的 4242 端口**不提供** `.m3u8` / `.ts`（源码里没有这条路由），HLS
-切片只是写到 `hls_storage_dir`。所以本包在首次启动时通过
-`/etc/uci-defaults/95-mumudvb-hls` 建了一个专用 uhttpd 实例：
+切片只是写到 `hls_storage_dir`。本包在首次启动时通过
+`/etc/uci-defaults/95-mumudvb-hls` 建一个专用 uhttpd 实例当网关：
 
 ```
-uhttpd.mumudvb_hls  listen_http=0.0.0.0:8090  home=/tmp/hls  index_page=playlist.m3u8
+uhttpd.mumudvb_hls
+  listen_http  0.0.0.0:8090
+  home         /etc/mumudvb/gw          ← 只是一个只含 cgi-bin/ 的壳
+  cgi_prefix   /cgi-bin
+  error_page   /cgi-bin/hls             ← 所有真实请求先 404，再转给 CGI
 ```
 
 ```sh
-# 总列表（访问根路径就是它）
-http://<路由器IP>:8090/
-# 单台
-http://<路由器IP>:8090/1.m3u8      # 按 service id 命名
-# 切片
-http://<路由器IP>:8090/1_5206.ts
+http://<路由器IP>:8090/            落地页（列出各台，可点播）
+http://<路由器IP>:8090/playlist.m3u8
+http://<路由器IP>:8090/1.m3u8      单台，按 service id 命名
+http://<路由器IP>:8090/1_5206.ts   切片
 ```
 
-两个注意点：
+#### 为什么要绕一层 CGI，不能直接静态服务
 
-- **只挂 `/tmp/hls`，不挂 `/tmp`**。`/tmp/luci-sessions` 里是 LuCI 的会话文件，
-  把 `/tmp` 整棵挂出去等于公开后台登录态。
-- **`/tmp` 是 tmpfs，切片吃的是内存**。mumudvb 默认 10 秒一片，3 个高清台
-  实测能占 120MB；`hls_rotate_time=2` 后降到 20~30MB。本包默认就是 2 秒，
-  另外 `hls_rotate_count=3`（6 秒缓冲，比默认的 2 片更抗抖动）。
+两个坑，都是实测确认过的：
+
+1. **uhttpd 的 mime 表改不了**。它编译进二进制（`mimetypes.h` 62 条，没有
+   m3u8/ts/mpegurl），`-m` 参数在 2026.10.19 版里**不存在**，能自定义响应的
+   `uhttpd-mod-ucode` / `uhttpd-mod-lua` 在裁剪固件里通常没装。直接静态服务
+   会给 `.m3u8` 回 `application/octet-stream`，**iOS Safari 见到就当成文件下载，
+   不播放**。
+2. **mumudvb 写的主列表不合 HLS 规范**。`hls.c:290` 用 `#EXTINF:0,名字` 标台，
+   而 master playlist 只能用 `#EXT-X-STREAM-INF`。Safari / hls.js 判定非法直接
+   拒绝；VLC 是把它当普通 m3u 容错掉了，所以会出现「VLC 能放、浏览器不能」的
+   错觉。
+
+所以网关的 docroot 里只有 `cgi-bin/hls` 和 `index.html`，请求先 404、
+经 `-E` 转给 CGI 由它决定 Content-Type（顺带把 master 转成合法格式）。
+给 CGI 的 `REQUEST_URI` 仍是原始路径（`PATH_INFO` 是空的）。
+
+**4242 那条路不用管**：mumudvb 自己发的头是对的
+（`playlist.m3u` → `audio/x-mpegurl`，`bysid/N` → `video/mpeg`，
+`channels_list.json` → `application/json` 且带 `Access-Control-Allow-Origin: *`）。
+
+#### 两个注意点
+
+- **只暴露 `/etc/mumudvb/gw`，不碰 `/tmp`**。`/tmp/luci-sessions` 里是 LuCI 的
+  会话文件，把 `/tmp` 整棵挂出去等于公开后台登录态。CGI 里对 `..` 直接 400。
+- **`/tmp` 是 tmpfs，切片吃的是内存**。mumudvb 默认 10 秒一片，3 个高清台实测
+  占 120MB；`hls_rotate_time=2` 后降到 20~30MB。本包默认 2 秒 +
+  `hls_rotate_count=3`（6 秒缓冲，比默认 2 片抗抖动）。
+
+#### iOS 的硬限制：AC3
+
+香港 DTMB 这几个台的音频是 **AC3**。裸 TS 切片里的 AC3 没有 `CODECS` 声明，
+iOS/iPadOS Safari 无法确认能否解码，常见表现是黑屏或无声。**这个服务端解决
+不了**，只能转码（路由器算力不够）。
+
+- iPhone/iPad：建议装 VLC / Infuse / nPlayer 之类，直接拉
+  `http://<路由器IP>:4242/bysid/1`（HTTP TS 单播）
+- PC / Android / 电视盒子：HLS 和 HTTP TS 都能用
 
 不想用 HLS 就 `option hls '0'`，HTTP 单播已经能喂 VLC/Kodi/PotPlayer，还不落盘。
+
+#### 要改端口
+
+```sh
+uci set uhttpd.mumudvb_hls.listen_http='0.0.0.0:9090'
+uci commit uhttpd && /etc/init.d/uhttpd restart
+```
+
+界面上的链接固定按 8090 生成，改端口后需要同步改
+`luci-app-mumudvb` 里的 `HLS_PORT`。
 
 ## 七、排错
 

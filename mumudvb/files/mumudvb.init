@@ -87,13 +87,24 @@ start_tuner() {
 	config_get_bool enabled "$cfg" enabled 1
 	[ "$enabled" = 1 ] || return 0
 
-	# HLS 目录先建出来：mumudvb 自己也会 mkpath，但 uhttpd 的 home 指向
-	# 同一个目录，它可能比 mumudvb 先起来，目录不存在就会 404。
+	# HLS 目录先建出来：mumudvb 自己也会 mkpath，但 8090 网关的 CGI 会在
+	# mumudvb 之前就响应请求，目录不存在会直接 404。
 	config_get hls "$cfg" hls 0
 	case "$hls" in
 	1|on|yes|true|enabled)
 		config_get hlsdir "$cfg" hls_storage_dir "$HLS_DIR"
 		mkdir -p "$hlsdir" 2>/dev/null
+
+		# 把实际目录告诉 hls.cgi：它不读 UCI（CGI 里 fork 一次 uci 太贵），
+		# 只读这个小文件。多 tuner 用不同目录时只认第一条并告警 ——
+		# 8090 这个网关只能服务一个目录。
+		if [ ! -f "$GEN_DIR/hls_root" ]; then
+			echo "$hlsdir" > "$GEN_DIR/hls_root"
+		else
+			_root_used="$(cat "$GEN_DIR/hls_root" 2>/dev/null)"
+			[ "$_root_used" = "$hlsdir" ] || logger -t mumudvb \
+				"warning: '$cfg' writes HLS to '$hlsdir' but the 8090 gateway serves '$_root_used'; use one hls_storage_dir if you need the gateway"
+		fi
 		;;
 	esac
 
@@ -113,10 +124,12 @@ start_service() {
 	local enabled custom file
 
 	config_load mumudvb
+	mkdir -p "$RUN_DIR" "$GEN_DIR"
+	# 每次启动重算，避免 stop 后 CGI 还照着一个已经不存在的旧目录找文件
+	rm -f "$GEN_DIR/hls_root"
+
 	config_get_bool enabled main enabled 0
 	[ "$enabled" = 1 ] || return 0
-
-	mkdir -p "$RUN_DIR" "$GEN_DIR"
 
 	config_get_bool custom main custom 0
 	if [ "$custom" = 1 ]; then

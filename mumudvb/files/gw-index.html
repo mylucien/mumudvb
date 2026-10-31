@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MuMuDVB · HLS</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+         margin: 0; padding: 24px; max-width: 720px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.sub { margin: 0 0 20px; opacity: .7; font-size: 13px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { border: 1px solid rgba(128,128,128,.3); border-radius: 8px;
+       padding: 12px 14px; margin-bottom: 8px; }
+  a { color: #2b7de9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .links { margin-top: 6px; font-size: 13px; display: flex;
+           gap: 14px; flex-wrap: wrap; align-items: baseline; }
+  .muted { opacity: .6; }
+</style>
+</head>
+<body>
+<h1>MuMuDVB · HLS</h1>
+<p class="sub">本页由 8090 网关提供，切片来自 mumudvb 的 HLS 输出。</p>
+
+<p><a href="/playlist.m3u8">▸ 总播放列表 playlist.m3u8</a></p>
+
+<ul id="ch"><li class="muted">正在读取频道…</li></ul>
+
+<script>
+(function () {
+	var box = document.getElementById('ch');
+	var host = location.hostname;
+
+	function row(c) {
+		var sid = c.service_id;
+		var li = document.createElement('li');
+
+		var h = document.createElement('div');
+		h.textContent = c.name + (c.is_up ? '' : '（未就绪）');
+		li.appendChild(h);
+
+		var d = document.createElement('div');
+		d.className = 'links';
+
+		var a1 = document.createElement('a');
+		a1.href = '/' + sid + '.m3u8';
+		a1.textContent = 'HLS';
+		d.appendChild(a1);
+
+		var a2 = document.createElement('a');
+		a2.href = 'http://' + host + ':4242/bysid/' + sid;
+		a2.textContent = 'HTTP TS';
+		d.appendChild(a2);
+
+		var sp = document.createElement('span');
+		sp.className = 'muted';
+		sp.textContent = c.ip_multicast + ':' + c.port_multicast;
+		d.appendChild(sp);
+
+		li.appendChild(d);
+		return li;
+	}
+
+	// mumudvb 的 HTTP 服务带 Access-Control-Allow-Origin: *，跨端口可以直接取
+	fetch('http://' + host + ':4242/channels_list.json', { cache: 'no-store' })
+		.then(function (r) { if (!r.ok) throw 0; return r.json(); })
+		.then(function (list) {
+			box.innerHTML = '';
+			if (!list.length) {
+				box.innerHTML = '<li class="muted">没有频道</li>';
+				return;
+			}
+			list.forEach(function (c) { box.appendChild(row(c)); });
+		})
+		.catch(function () {
+			box.innerHTML = '<li class="muted">读取频道列表失败：HTTP 单播可能未启用，'
+				+ '或者端口不是 4242。上面的总列表仍然可用。</li>';
+		});
+})();
+</script>
+</body>
+</html>

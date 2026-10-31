@@ -7,6 +7,9 @@ msgstr ""
 "Language: zh_Hans\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+msgid "Copied: %s"
+msgstr "已复制：%s"
+
 msgid "MuMuDVB restarted."
 msgstr "MuMuDVB 已重启。"
 
@@ -15,6 +18,72 @@ msgstr "重启失败（退出码 %d）。"
 
 msgid "Restart failed: %s"
 msgstr "重启失败：%s"
+
+msgid "Output addresses"
+msgstr "输出地址"
+
+msgid "Add a tuner first."
+msgstr "请先添加一个调谐器。"
+
+msgid "Copy"
+msgstr "复制"
+
+msgid "not enabled"
+msgstr "未启用"
+
+msgid "Type"
+msgstr "类型"
+
+msgid "What it is"
+msgstr "说明"
+
+msgid "Address"
+msgstr "地址"
+
+msgid "HTTP unicast"
+msgstr "HTTP 单播"
+
+msgid "Raw TS per channel, lowest latency, no disk use."
+msgstr "每个台一路原始 TS，延迟最低，不占磁盘。"
+
+msgid "HLS"
+msgstr "HLS"
+
+msgid "Segment based, works in browsers; served by the gateway on port %s."
+msgstr "基于切片，浏览器可直接播；由 %s 端口的网关提供。"
+
+msgid "iOS Safari may refuse streams whose audio is AC3 — use the HTTP unicast URL there instead."
+msgstr "音频是 AC3 时 iOS Safari 可能拒绝播放，这种情况请用 HTTP 单播地址。"
+
+msgid "Multicast groups are generated from the autoconf_ip4 template; see the Multicast column below."
+msgstr "组播地址由 autoconf_ip4 模板生成，具体值见下表「组播」列。"
+
+msgid "Channels and links"
+msgstr "频道与链接"
+
+msgid "Reading channels…"
+msgstr "正在读取频道…"
+
+msgid "No channel discovered yet."
+msgstr "还没有发现频道。"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "SID"
+msgstr "SID"
+
+msgid "Multicast"
+msgstr "组播"
+
+msgid "HTTP TS"
+msgstr "HTTP 单播"
+
+msgid "(not ready)"
+msgstr "（未就绪）"
+
+msgid "Cannot read the channel list — HTTP unicast is disabled, the service is not running, or the port is not %s."
+msgstr "读取频道列表失败：HTTP 单播未启用、服务未运行，或端口不是 %s。"
 
 msgid "MuMuDVB"
 msgstr "MuMuDVB"
@@ -72,9 +141,6 @@ msgstr "添加调谐器"
 
 msgid "Tuner settings"
 msgstr "调谐器设置"
-
-msgid "Name"
-msgstr "名称"
 
 msgid "Enabled"
 msgstr "启用"
@@ -235,9 +301,6 @@ msgstr "开关输入口"
 msgid "0..31, overrides the DiSEqC satellite number."
 msgstr "0..31，会覆盖 DiSEqC 卫星号。"
 
-msgid "HTTP unicast"
-msgstr "HTTP 单播"
-
 msgid "Serves every channel as an HTTP TS stream plus a playlist and a status page."
 msgstr "每个频道对外提供 HTTP TS 流，并附带播放列表和状态页。"
 
@@ -342,6 +405,21 @@ msgstr "运行中"
 
 msgid "stopped"
 msgstr "已停止"
+
+msgid "HLS gateway"
+msgstr "HLS 网关"
+
+msgid "reachable on port %s"
+msgstr "可达（%s 端口）"
+
+msgid "not reachable — check the mumudvb_hls instance in /etc/config/uhttpd"
+msgstr "不可达 —— 检查 /etc/config/uhttpd 里的 mumudvb_hls 实例"
+
+msgid "unknown — the service has not been started yet"
+msgstr "未知 —— 服务还没启动过"
+
+msgid "Output"
+msgstr "输出"
 
 msgid "Log"
 msgstr "日志"

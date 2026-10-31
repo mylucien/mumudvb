@@ -13,7 +13,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/braice/MuMuDVB.git
 PKG_SOURCE_VERSION:=ce2db87f2341b73e639d3248de7a841339d91716
 PKG_SOURCE_DATE:=2026-09-13
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 # 故意不写 PKG_VERSION，原因有两个：
 #
@@ -94,7 +94,15 @@ define Package/mumudvb/install
 	$(INSTALL_DIR) $(1)/etc/mumudvb
 	$(INSTALL_DATA) ./files/mumudvb.conf.sample $(1)/etc/mumudvb/mumudvb.conf.sample
 
-	# 首次启动时建一个 uhttpd 实例，把 HLS 目录挂到 8090 端口
+	# HLS 网关：docroot 里只放 CGI 和一个落地页，真实的 .m3u8/.ts 由
+	# cgi-bin/hls 从 /tmp/hls 读（uhttpd 的 mime 表改不了，只能绕开）。
+	# 放 /etc 而不是 /tmp：uhttpd START=50 早于 mumudvb START=95，
+	# docroot 不存在的话这个实例直接起不来。
+	$(INSTALL_DIR) $(1)/etc/mumudvb/gw/cgi-bin
+	$(INSTALL_BIN) ./files/hls.cgi $(1)/etc/mumudvb/gw/cgi-bin/hls
+	$(INSTALL_DATA) ./files/gw-index.html $(1)/etc/mumudvb/gw/index.html
+
+	# 首次启动时建 uhttpd 实例（幂等，带 gw_version 可升级）
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/95-mumudvb-hls $(1)/etc/uci-defaults/95-mumudvb-hls
 endef
