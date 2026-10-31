@@ -170,6 +170,35 @@ cat /var/etc/mumudvb/card0.conf
 # VLC 打开 udp://@239.100.0.1:1234
 ```
 
+### HLS
+
+mumudvb 的 4242 端口**不提供** `.m3u8` / `.ts`（源码里没有这条路由），HLS
+切片只是写到 `hls_storage_dir`。所以本包在首次启动时通过
+`/etc/uci-defaults/95-mumudvb-hls` 建了一个专用 uhttpd 实例：
+
+```
+uhttpd.mumudvb_hls  listen_http=0.0.0.0:8090  home=/tmp/hls  index_page=playlist.m3u8
+```
+
+```sh
+# 总列表（访问根路径就是它）
+http://<路由器IP>:8090/
+# 单台
+http://<路由器IP>:8090/1.m3u8      # 按 service id 命名
+# 切片
+http://<路由器IP>:8090/1_5206.ts
+```
+
+两个注意点：
+
+- **只挂 `/tmp/hls`，不挂 `/tmp`**。`/tmp/luci-sessions` 里是 LuCI 的会话文件，
+  把 `/tmp` 整棵挂出去等于公开后台登录态。
+- **`/tmp` 是 tmpfs，切片吃的是内存**。mumudvb 默认 10 秒一片，3 个高清台
+  实测能占 120MB；`hls_rotate_time=2` 后降到 20~30MB。本包默认就是 2 秒，
+  另外 `hls_rotate_count=3`（6 秒缓冲，比默认的 2 片更抗抖动）。
+
+不想用 HLS 就 `option hls '0'`，HTTP 单播已经能喂 VLC/Kodi/PotPlayer，还不落盘。
+
 ## 七、排错
 
 | 现象 | 原因 / 处理 |

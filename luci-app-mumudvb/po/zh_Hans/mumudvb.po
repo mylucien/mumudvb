@@ -277,14 +277,29 @@ msgstr "SAP 分组名"
 msgid "HLS output"
 msgstr "HLS 输出"
 
-msgid "Writes HLS chunks into a directory served by an HTTP server."
-msgstr "把 HLS 切片写入目录，由 HTTP 服务器对外提供。"
+msgid "Writes HLS chunks to disk so a web server can serve them."
+msgstr "把 HLS 切片写到磁盘，交给 Web 服务器对外提供。"
+
+msgid "mumudvb itself does not expose .m3u8/.ts over its own HTTP port; this package adds a dedicated uhttpd instance on port 8090 for it."
+msgstr "mumudvb 自己的 HTTP 端口不提供 .m3u8/.ts，本包另外挂了一个专用 uhttpd 实例（8090 端口）来提供。"
 
 msgid "HLS directory"
 msgstr "HLS 目录"
 
-msgid "Leave empty for the mumudvb default (/tmp)."
-msgstr "留空则使用 mumudvb 默认值（/tmp）。"
+msgid "Chunks are written here and served by the uhttpd instance on port 8090, so this must stay /tmp/hls unless you also change that instance."
+msgstr "切片写在这里，由 8090 端口的 uhttpd 实例对外提供；除非你同时改了那个实例，否则请保持 /tmp/hls。"
+
+msgid "HLS segment length"
+msgstr "HLS 切片长度"
+
+msgid "Seconds per chunk. The directory lives on tmpfs, so longer chunks cost RAM: 10 s takes about 120 MB for three HD services, 2 s about 25 MB. Shorter also means lower latency."
+msgstr "每片秒数。目录在 tmpfs 上，切片越长越占内存：3 个高清台 10 秒约 120MB，2 秒约 25MB。调小同时能降低延迟。"
+
+msgid "2 s (recommended)"
+msgstr "2 秒（推荐）"
+
+msgid "10 s (mumudvb default)"
+msgstr "10 秒（mumudvb 默认）"
 
 msgid "Rewrite PAT"
 msgstr "重写 PAT"

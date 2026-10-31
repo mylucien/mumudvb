@@ -50,6 +50,11 @@ define Package/mumudvb
   CATEGORY:=Multimedia
   TITLE:=DVB/ATSC to IPTV streamer (multicast, HTTP unicast, HLS)
   URL:=https://mumudvb.net/
+  # HLS 输出必须有个 HTTP 服务器把 hls_storage_dir 暴露出去：mumudvb 自己的
+  # 4242 端口只提供 /bysid/ 和 /playlist.m3u，不提供 .m3u8/.ts（源码里没有
+  # 这条路由）。uhttpd 在 OpenWrt 里本来就在（luci-base 依赖它），这里显式
+  # 声明，避免裁剪过的固件装了 mumudvb 却发现 HLS 访问不到。
+  DEPENDS:=+uhttpd
 endef
 
 define Package/mumudvb/description
@@ -88,6 +93,10 @@ define Package/mumudvb/install
 
 	$(INSTALL_DIR) $(1)/etc/mumudvb
 	$(INSTALL_DATA) ./files/mumudvb.conf.sample $(1)/etc/mumudvb/mumudvb.conf.sample
+
+	# 首次启动时建一个 uhttpd 实例，把 HLS 目录挂到 8090 端口
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/95-mumudvb-hls $(1)/etc/uci-defaults/95-mumudvb-hls
 endef
 
 $(eval $(call BuildPackage,mumudvb))

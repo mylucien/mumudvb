@@ -305,12 +305,23 @@ return view.extend({
 		o.modalonly = true;
 
 		o = s.option(form.Flag, 'hls', _('HLS output'),
-			_('Writes HLS chunks into a directory served by an HTTP server.'));
+			_('Writes HLS chunks to disk so a web server can serve them.') + ' ' +
+			_('mumudvb itself does not expose .m3u8/.ts over its own HTTP port; this package adds a dedicated uhttpd instance on port 8090 for it.'));
 		o.modalonly = true;
 
 		o = s.option(form.Value, 'hls_storage_dir', _('HLS directory'),
-			_('Leave empty for the mumudvb default (/tmp).'));
+			_('Chunks are written here and served by the uhttpd instance on port 8090, so this must stay /tmp/hls unless you also change that instance.'));
 		o.placeholder = '/tmp/hls';
+		o.depends('hls', '1');
+		o.modalonly = true;
+
+		o = s.option(form.ListValue, 'hls_rotate_time', _('HLS segment length'),
+			_('Seconds per chunk. The directory lives on tmpfs, so longer chunks cost RAM: 10 s takes about 120 MB for three HD services, 2 s about 25 MB. Shorter also means lower latency.'));
+		o.value('2', _('2 s (recommended)'));
+		o.value('4', '4 s');
+		o.value('6', '6 s');
+		o.value('10', _('10 s (mumudvb default)'));
+		o.default = '2';
 		o.depends('hls', '1');
 		o.modalonly = true;
 

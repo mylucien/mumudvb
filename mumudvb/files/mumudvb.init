@@ -15,6 +15,10 @@ RUN_DIR=/var/run/mumudvb
 GEN_DIR=/var/etc/mumudvb
 EXTRA_DIR=/etc/mumudvb
 
+# HLS 输出目录的默认值。必须和 /etc/uci-defaults/95-mumudvb-hls 里那个
+# uhttpd 实例的 home 一致，否则 HLS 写在一处、HTTP 却从另一处读。
+HLS_DIR=/tmp/hls
+
 # 以下 UCI 选项名与 mumudvb 配置指令名一一对应，直接透传
 TUNING_OPTS="card tuner delivery_system freq modulation coderate bandwidth \
 	trans_mode guardinterval isdbt_layer pol srate sat_number lnb_type \
@@ -27,7 +31,8 @@ GLOBAL_OPTS="autoconfiguration autoconf_ip4 autoconf_ip6 autoconf_radios \
 	multicast_ipv6 multicast_iface4 common_port multicast_ttl \
 	multicast_auto_join unicast ip_http port_http unicast_max_clients \
 	unicast_queue_size hls hls_storage_dir hls_playlist_name \
-	hls_rotate_time rtp_header sap sap_default_group sap_interval \
+	hls_rotate_time hls_rotate_count hls_rotate_iframe \
+	rtp_header sap sap_default_group sap_interval \
 	sap_organisation rewrite_pat rewrite_sdt rewrite_eit rewrite_pmt \
 	sort_eit psi_tables_filtering dvr_buffer_size dvr_thread \
 	tuning_timeout timeout_no_diff check_status dont_send_scrambled \
@@ -41,6 +46,9 @@ GLOBAL_OPTS="autoconfiguration autoconf_ip4 autoconf_ip6 autoconf_radios \
 ui_default() {
 	case "$1" in
 	autoconfiguration) echo full ;;
+	# mumudvb 内置默认是整个 /tmp，HLS 文件会和别的东西混在一起，
+	# 也不方便只把这个子目录单向暴露给 uhttpd。
+	hls_storage_dir) echo "$HLS_DIR" ;;
 	*) echo "" ;;
 	esac
 }
@@ -74,10 +82,20 @@ gen_config() {
 }
 
 start_tuner() {
-	local cfg="$1" enabled conf
+	local cfg="$1" enabled conf hls hlsdir
 
 	config_get_bool enabled "$cfg" enabled 1
 	[ "$enabled" = 1 ] || return 0
+
+	# HLS 目录先建出来：mumudvb 自己也会 mkpath，但 uhttpd 的 home 指向
+	# 同一个目录，它可能比 mumudvb 先起来，目录不存在就会 404。
+	config_get hls "$cfg" hls 0
+	case "$hls" in
+	1|on|yes|true|enabled)
+		config_get hlsdir "$cfg" hls_storage_dir "$HLS_DIR"
+		mkdir -p "$hlsdir" 2>/dev/null
+		;;
+	esac
 
 	conf="$GEN_DIR/$cfg.conf"
 	gen_config "$cfg" > "$conf" 2>/dev/null

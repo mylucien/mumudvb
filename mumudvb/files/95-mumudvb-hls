@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# 给 mumudvb 的 HLS 输出配一个专用的 uhttpd 实例。
+#
+# 为什么需要：
+# mumudvb 自己的 HTTP 服务（port_http，默认 4242）只提供
+#   /playlist.m3u  /bysid/N  /bynumber/N  /byname/NAME
+#   /channels_list.html  /channels_list.json  /monitor/*
+# HLS 的 .m3u8 和 .ts 只是写到 hls_storage_dir 里，源码里没有对应的
+# HTTP 路由（unicast_http.c 里搜不到 m3u8 的处理），所以想在浏览器或
+# 播放器里用 HLS，必须另外有一个 web 服务器把那个目录暴露出来。
+#
+# 为什么不直接暴露 /tmp：
+# /tmp/luci-sessions 里是 LuCI 的会话文件，把 /tmp 整个挂出去等于公开
+# 后台登录态。这里只挂 /tmp/hls 这一个子目录。
+
+[ -f /etc/config/uhttpd ] || exit 0
+
+# 幂等：已经有同名实例就什么都不做
+[ -n "$(uci -q get uhttpd.mumudvb_hls)" ] && exit 0
+
+uci set uhttpd.mumudvb_hls=uhttpd
+uci set uhttpd.mumudvb_hls.listen_http='0.0.0.0:8090'
+uci set uhttpd.mumudvb_hls.home='/tmp/hls'
+# 访问 / 就是总播放列表
+uci set uhttpd.mumudvb_hls.index_page='playlist.m3u8'
+uci set uhttpd.mumudvb_hls.no_symlinks='1'
+uci commit uhttpd
+
+# 让 HLS 输出落在上面 home 指向的目录里（配置里显式指定过的就不动）
+for s in $(uci show mumudvb 2>/dev/null | sed -n 's/^mumudvb\.\([^.=]*\)\.freq=.*/\1/p'); do
+	[ -n "$(uci -q get "mumudvb.$s.hls_storage_dir")" ] || \
+		uci set "mumudvb.$s.hls_storage_dir=/tmp/hls"
+done
+uci -q commit mumudvb
+
+mkdir -p /tmp/hls
+
+logger -t mumudvb "added uhttpd instance 'mumudvb_hls' on 0.0.0.0:8090 serving /tmp/hls"
+
+exit 0
